@@ -7,24 +7,24 @@ declare namespace xsi="http://www.w3.org/2001/XMLSchema-instance";
 declare namespace space="preserve";
 declare namespace schemaLocation="http://www.tei-c.org/ns/1.0 ../../804_xsd/1.0.0/featuredb.xsd";
 
-declare variable $path := "C:\Users\User\Documents\GitHub\acdh\"; (: here you have to change your path if necessary :)
-declare variable $files := collection("features");
+declare variable $path := "C:\Users\User\Documents\GitHub\acdh\"; (: for output file, here you have to change your path if necessary :)
+declare variable $files := collection("features"); (: for input files, here you have to change your path if necessary :)
 declare variable $features := $files//wib:featureValueObservation;
 
 
 declare function local:PlaceIndex(){
-(: I understood the task as to once assign an index to every place occurring in all the documents
-aso to indexing all the places like a datatable :)
+(: I understood the task as to assign one index to every place occurring in all the documents. :)
+
   <task>
   <question>1. an index of all mentioned places </question>
   <results>
   {
     for $feature in $features
-    let $place := $feature/placeName/@ref where (count($place) lt 2)
+    for $place in $feature/placeName/@ref 
     group by $place
-    order by $place (: if needed :)
+    order by $place (: if needed :) 
     count $n
-    return (<place><placeName>{$place}</placeName><placeIndex>{$n}</placeIndex></place>)
+    return (<place><placeName>{$place}</placeName><placeIndex>{$n}</placeIndex></place>) 
     (:
     return (<place index="{$n}"><placeName>{$place}</placeName></place>) (: or index as attribute :)
     :)
@@ -43,8 +43,12 @@ declare function local:DialectSummary(){
     let $dialect := $feature/lang/@corresp
     group by $dialect
     order by $dialect (: if needed :)
-    let $info := $feature where $dialect=$feature/lang/@corresp
+    return element result {element dialect {$dialect}, element count {count($feature)}} (: number of featureValueObservations for each dialect :)
+    (: following is my first version which shows all featureValueObservations for each dialect :)
+    (: 
+    let $info := $feature where $dialect=$feature/lang/@corresp 
     return element result {element dialect {$dialect}, element summary {$info}}
+    :)
   }
   </results>
   </task>
@@ -73,17 +77,17 @@ declare function local:FeaturesWithTribes() {
   <question>4. Which features are associated with tribes? </question>
   <results>
   {
+    (: 1. possibility: Which documents are associated with tribes :)
+    for $file in $files where $file//wib:featureValueObservation/personGrp/@role = "tribe"
+    return (<DocumentWithTribes>{tokenize(fn:base-uri($file),'/')[last()]}</DocumentWithTribes>) (: all of them contain tribes :)
+    (: 2. possibility: ref of featureValueObservation = id of featureValue :)
+    (:   
     for $feature in $features
-(: 1. possibility: id of featureValueObservation :)
-(:
-let $id := $feature/@xml:id where $feature/personGrp/@role = "tribe"
-return <ref> {$id} </ref> 
-:)
-(: 2. possibility: ref of featureValueObservation = id of featureValue :)
     let $ref := $feature/name/@ref where $feature/personGrp/@role = "tribe"
     group by $ref
     order by $ref
     return (<FeatureValueID>{$ref}</FeatureValueID>)
+    :)
   }
   </results>
   </task>
@@ -94,13 +98,13 @@ let $res1 := local:PlaceIndex()
 let $res2 := local:DialectSummary()
 let $res3 := local:BibliographyType()
 let $res4 := local:FeaturesWithTribes()
-(:return <report>{($res1, $res2, $res3, $res4)}</report>:)
+
 return file:write(concat($path,"data_extraction.xml"), <report>{$res1, $res2, $res3, $res4}</report>)
 
 
 
 (: 5. Do you find documents which cannot be parsed because of well-formedness errors? :)
-(: only duplicates :)
+(: It seemed as if all the 69 documents in the feature folder got properly parsed :)
 
 (: 6. Do you find broken pointers which cannot be resolved? :)
-(: Not sure yet. :)
+(: Within these tasks I didn't stumble over broken pointers :)
