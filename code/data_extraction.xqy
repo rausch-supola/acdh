@@ -7,8 +7,9 @@ declare namespace xsi="http://www.w3.org/2001/XMLSchema-instance";
 declare namespace space="preserve";
 declare namespace schemaLocation="http://www.tei-c.org/ns/1.0 ../../804_xsd/1.0.0/featuredb.xsd";
 
-declare variable $path := "C:\Users\User\Documents\GitHub\acdh\"; (: for output file, here you have to change your path if necessary :)
-declare variable $files := collection("features"); (: for input files, here you have to change your path if necessary :)
+declare variable $output_path := "..\output\"; (: for output file, here you have to change your path if necessary :)
+declare variable $output_filename := "data_extraction.xml"; (: for output file, here you have to change the filename if necessary :)
+declare variable $files := collection("..\features"); (: for input files, here you have to change your path if necessary :)
 declare variable $features := $files//wib:featureValueObservation;
 
 
@@ -99,7 +100,7 @@ let $res2 := local:DialectSummary()
 let $res3 := local:BibliographyType()
 let $res4 := local:FeaturesWithTribes()
 
-return file:write(concat($path,"data_extraction.xml"), <report>{$res1, $res2, $res3, $res4}</report>)
+return file:write(concat($output_path, $output_filename), <report>{$res1, $res2, $res3, $res4}</report>)
 
 
 

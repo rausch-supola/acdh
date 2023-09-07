@@ -11,5 +11,5 @@ Michaela Rausch-Supola
 - BaseX 10.7 - https://basex.org/download/
 
 ## Usage
-- Copy the Wibarab data into a folder named features inside the main folder, or adjust the path of the resource in the code (line 11)  
-- Adjust your path for the output XML file (data_extraction.xml) if needed (line 10)
+- Copy the WIBARAB data into a folder named features inside the main folder, or adjust the path of the features in the code (line 12)  
+- Adjust your path and/or the name for the output XML file (data_extraction.xml) if needed (line 10 and 11, respectively)
