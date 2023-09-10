@@ -9,31 +9,39 @@ declare namespace schemaLocation="http://www.tei-c.org/ns/1.0 ../../804_xsd/1.0.
 
 declare variable $output_path := "..\output\"; (: for output file, here you have to change your path if necessary :)
 declare variable $output_filename := "data_extraction.xml"; (: for output file, here you have to change the filename if necessary :)
+declare variable $output_filepath := concat($output_path, $output_filename);
+declare variable $filepath := "data_extraction.xml";
 declare variable $files := collection("..\features"); (: for input files, here you have to change your path if necessary :)
 declare variable $features := $files//wib:featureValueObservation;
+declare variable $geodata := doc("..\references\vicav_geodata.xml")//place; (: for the geodata file, here you have to change your path if necessary :)
+declare variable $biblio := doc("..\references\vicav_biblio_tei_zotero.xml"); (: for the biblio file, here you have to change your path if necessary :)
 
 
 declare function local:PlaceIndex(){
-(: I understood the task as to assign one index to every place occurring in all the documents. :)
-
+  
   <task>
-  <question>1. an index of all mentioned places </question>
+  <question>1. the index of all mentioned places </question>
   <results>
-  {
-    for $feature in $features
-    for $place in $feature/placeName/@ref 
-    group by $place
-    order by $place (: if needed :) 
-    count $n
-    return (<place><placeName>{$place}</placeName><placeIndex>{$n}</placeIndex></place>) 
-    (:
-    return (<place index="{$n}"><placeName>{$place}</placeName></place>) (: or index as attribute :)
-    :)
+  { 
+    for $placedata in $geodata where $placedata/@xml:id = $features/placeName/substring(@ref, 5)
+    return (<place><placeName>{data($placedata/@xml:id)}</placeName><placeIndex>{data($placedata/idno)}</placeIndex></place>) 
   }
   </results>
   </task>
 };
 
+(: first I understood the task as to assign one index (starting from 1) to every place occurring in all the documents. Here is the code snippet. Upon revision I assumed that the task is linked to the geodata file :)
+(:
+  
+    for $feature in $features
+    for $place in $feature/placeName/@ref 
+    group by $place
+    count $n
+    return (<place><placeName>{$place}</placeName><placeIndex>{$n}</placeIndex></place>) 
+    (:
+    return (<place index="{$n}"><placeName>{$place}</placeName></place>) (: or index as attribute :)
+:) 
+:)
 
 declare function local:DialectSummary(){
   <task>
@@ -100,7 +108,8 @@ let $res2 := local:DialectSummary()
 let $res3 := local:BibliographyType()
 let $res4 := local:FeaturesWithTribes()
 
-return file:write(concat($output_path, $output_filename), <report>{$res1, $res2, $res3, $res4}</report>)
+
+return file:write($filepath, <report>{$res1, $res2, $res3, $res4}</report>)
 
 
 
