@@ -7,14 +7,12 @@ declare namespace xsi="http://www.w3.org/2001/XMLSchema-instance";
 declare namespace space="preserve";
 declare namespace schemaLocation="http://www.tei-c.org/ns/1.0 ../../804_xsd/1.0.0/featuredb.xsd";
 
-declare variable $output_path := "..\output\"; (: for output file, here you have to change your path if necessary :)
+declare variable $output_path := "C:\Users\User\Documents\GitHub\acdh\output\"; (: for output file, here you have to change your path if necessary :)
 declare variable $output_filename := "data_extraction.xml"; (: for output file, here you have to change the filename if necessary :)
-declare variable $output_filepath := concat($output_path, $output_filename);
-declare variable $filepath := "data_extraction.xml";
 declare variable $files := collection("..\features"); (: for input files, here you have to change your path if necessary :)
 declare variable $features := $files//wib:featureValueObservation;
 declare variable $geodata := doc("..\references\vicav_geodata.xml")//place; (: for the geodata file, here you have to change your path if necessary :)
-declare variable $biblio := doc("..\references\vicav_biblio_tei_zotero.xml"); (: for the biblio file, here you have to change your path if necessary :)
+declare variable $biblio := doc("..\references\vicav_biblio_tei_zotero.xml")//biblStruct; (: for the biblio file, here you have to change your path if necessary :)
 
 
 declare function local:PlaceIndex(){
@@ -23,25 +21,13 @@ declare function local:PlaceIndex(){
   <question>1. the index of all mentioned places </question>
   <results>
   { 
-    for $placedata in $geodata where $placedata/@xml:id = $features/placeName/substring(@ref, 5)
+    for $placedata in $geodata where $placedata/@xml:id = $features/placeName/substring-after(@ref, ':')
     return (<place><placeName>{data($placedata/@xml:id)}</placeName><placeIndex>{data($placedata/idno)}</placeIndex></place>) 
   }
   </results>
   </task>
 };
 
-(: first I understood the task as to assign one index (starting from 1) to every place occurring in all the documents. Here is the code snippet. Upon revision I assumed that the task is linked to the geodata file :)
-(:
-  
-    for $feature in $features
-    for $place in $feature/placeName/@ref 
-    group by $place
-    count $n
-    return (<place><placeName>{$place}</placeName><placeIndex>{$n}</placeIndex></place>) 
-    (:
-    return (<place index="{$n}"><placeName>{$place}</placeName></place>) (: or index as attribute :)
-:) 
-:)
 
 declare function local:DialectSummary(){
   <task>
@@ -53,7 +39,7 @@ declare function local:DialectSummary(){
     group by $dialect
     order by $dialect (: if needed :)
     return element result {element dialect {$dialect}, element count {count($feature)}} (: number of featureValueObservations for each dialect :)
-    (: following is my first version which shows all featureValueObservations for each dialect :)
+    (: below is my first version which shows all featureValueObservations for each dialect :)
     (: 
     let $info := $feature where $dialect=$feature/lang/@corresp 
     return element result {element dialect {$dialect}, element summary {$info}}
@@ -68,17 +54,29 @@ declare function local:BibliographyType(){
   <question>3. Which types of bibliographic items are used most? </question>
   <results>
   {
+    
     for $feature in $features
     let $type := normalize-space(lower-case($feature/bibl/@type))
-    group by $type
+    
+    let $var := 
+    if ($type = "publication") then
+      for $entry in $biblio
+      return
+      if ($feature/bibl/substring-after(@corresp, ':') = $entry/@n) then
+        ($entry/@type)
+      else
+        ()
+    else
+      ($type)
+    group by $var
     order by count($feature) descending
-    return (<bibliographicItem><type>{$type}</type><count>{count($feature)}</count></bibliographicItem>)
+    return (<bibliographicItem><type>{$var}</type><count>{count($feature)}</count></bibliographicItem>)
   }
   </results>
   </task>
 };
 (: if PC/pc means personalcommunication it should be adjusted accordingly. 
-The most used bibliographic items are publications by far, followed by fieldword and personal communication :)
+The most used bibliographic items are books by far, followed by journalarticles and theses :)
 
 
 declare function local:FeaturesWithTribes() {
@@ -108,8 +106,7 @@ let $res2 := local:DialectSummary()
 let $res3 := local:BibliographyType()
 let $res4 := local:FeaturesWithTribes()
 
-
-return file:write($filepath, <report>{$res1, $res2, $res3, $res4}</report>)
+return file:write(concat($output_path, $output_filename), <report>{$res1, $res2, $res3, $res4}</report>)
 
 
 
